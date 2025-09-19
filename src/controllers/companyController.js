@@ -117,8 +117,24 @@ const getCompanyParkingLocations = async (req, res) => {
   }
 };
 
+
+const updateCompanyToPro = async (companyId) => {
+  try {
+    const query = 'UPDATE companies SET subscription_status = \'pro\', updated_at = NOW() WHERE id = $1 RETURNING *';
+    const result = await pool.query(query, [companyId]);
+    if (result.rows.length > 0) {
+      return result.rows[0];
+    }
+    return null;
+  } catch (err) {
+    console.error('Error updating company to pro:', err);
+    throw new Error('Database error updating company to pro');
+  }
+};
+
 module.exports = {
   registerCompany,
   getCompanyById,
   getCompanyParkingLocations,
+  updateCompanyToPro,
 };

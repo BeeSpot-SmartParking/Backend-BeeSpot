@@ -5,6 +5,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+const paymentRoutes = require('./routes/payment');
 const app = express();
 
 // Security middleware
@@ -58,6 +59,9 @@ app.use('/api/reservations', require('./routes/reservations'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/companies', require('./routes/companies'));
 app.use('/api/admin', require('./routes/admin'));
+
+app.use('/api/payment', paymentRoutes); 
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

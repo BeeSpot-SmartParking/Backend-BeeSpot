@@ -1,4 +1,5 @@
 const { pool } = require('../config/database');
+const { updateParkingDetails } = require('./parkingController');
 
 // Generate simple confirmation code
 const generateConfirmationCode = () => {
@@ -426,10 +427,77 @@ const completeReservation = async (req, res) => {
 };
 
 
+const updateReservationStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    const query = 'UPDATE reservations SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *';
+    const result = await pool.query(query, [status, id]);
+    if (result.rows.length > 0) {
+      res.status(200).json({
+        message: 'Reservation status updated successfully!',
+        reservation: result.rows[0]
+      });
+    } else {
+      res.status(404).json({ message: 'Reservation not found' });
+    }
+  } catch (err) {
+    console.error('Error updating reservation status:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+
+const getReservationsByUserId = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const query = 'SELECT * FROM reservations WHERE user_id = $1 ORDER BY created_at DESC';
+    const result = await pool.query(query, [userId]);
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Error fetching reservations by user ID:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+
+
+const generateQRCodeData = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const query = 'SELECT id, user_id, parking_id, start_time, end_time FROM reservations WHERE id = $1';
+    const result = await pool.query(query, [id]);
+    if (result.rows.length > 0) {
+      const reservationData = result.rows[0];
+      // Create a unique string to represent the reservation
+      const qrCodePayload = JSON.stringify({
+        reservationId: reservationData.id,
+        userId: reservationData.user_id,
+        parkingId: reservationData.parking_id,
+        startTime: reservationData.start_time,
+        endTime: reservationData.end_time,
+        // Add a signature or token for security in a real application
+      });
+      res.status(200).json({ qrCodeData: qrCodePayload });
+    } else {
+      res.status(404).json({ message: 'Reservation not found' });
+    }
+  } catch (err) {
+    console.error('Error generating QR code data:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 module.exports = {
+  updateReservationStatus ,
   createReservation,
   getReservationByCode,
   getAllReservations,
   cancelReservation,
-  completeReservation
+  completeReservation,
+  getReservationsByUserId,
+  generateQRCodeData
 };

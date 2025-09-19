@@ -1,5 +1,61 @@
 const { pool } = require('../config/database');
 
+
+
+
+const getCompanyAnalytics = async (req, res) => {
+  const { companyId } = req.params;
+  try {
+    // Get total parking spots for the company
+    const totalSpots = await pool.query('SELECT SUM(total_spots) FROM parking_locations WHERE company_id = $1', [companyId]);
+    
+    // Get total reservations for the company's parking locations
+    const totalReservations = await pool.query(`
+      SELECT COUNT(r.*) FROM reservations r
+      JOIN parking_locations p ON r.parking_id = p.id
+      WHERE p.company_id = $1
+    `, [companyId]);
+
+    // Get reservation trends (e.g., daily count for the last 7 days)
+    const dailyReservations = await pool.query(`
+      SELECT DATE(created_at) as date, COUNT(*) as count
+      FROM reservations
+      JOIN parking_locations ON reservations.parking_id = parking_locations.id
+      WHERE parking_locations.company_id = $1 AND created_at >= NOW() - INTERVAL '7 days'
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `, [companyId]);
+
+    res.status(200).json({
+      totalSpots: parseInt(totalSpots.rows[0].sum, 10) || 0,
+      totalReservations: parseInt(totalReservations.rows[0].count, 10),
+      dailyReservations: dailyReservations.rows,
+    });
+  } catch (err) {
+    console.error('Error fetching company analytics:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// New mock function for sensor data
+const getParkingSensorData = async (req, res) => {
+  const { parkingId } = req.params;
+  try {
+    const mockSensorData = {
+      parkingId: parkingId,
+      emptySpots: Math.floor(Math.random() * 50),
+      occupiedSpots: Math.floor(Math.random() * 50),
+      // In a real application, this would come from a live sensor feed
+      unauthorizedVehicles: Math.random() > 0.9 ? Math.floor(Math.random() * 3) : 0,
+      timestamp: new Date().toISOString()
+    };
+    res.status(200).json(mockSensorData);
+  } catch (err) {
+    console.error('Error fetching sensor data:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 const getDashboardMetrics = async (req, res) => {
   try {
     const [
@@ -62,5 +118,7 @@ const getDashboardMetrics = async (req, res) => {
 };
 
 module.exports = {
-  getDashboardMetrics,
+    getDashboardMetrics,
+  getCompanyAnalytics,
+  getParkingSensorData,
 };
