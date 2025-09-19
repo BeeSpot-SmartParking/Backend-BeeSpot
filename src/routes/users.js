@@ -3,7 +3,7 @@ const router = express.Router();
 const {
   registerUser,
   getUserByEmail
-} = require('../controllers/userController');
+} = require('../controllers/usersController');
 
 // Register a new user
 router.post('/', registerUser);

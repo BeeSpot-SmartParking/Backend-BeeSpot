@@ -1,5 +1,3 @@
-// src/app.js - Updated with basic parking and reservation routes
-
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -46,6 +44,9 @@ app.get('/', (req, res) => {
     endpoints: {
       parking: '/api/parking',
       reservations: '/api/reservations',
+      users: '/api/users',
+      companies: '/api/companies',
+      admin: '/api/admin',
       health: '/api/health'
     }
   });
@@ -54,6 +55,9 @@ app.get('/', (req, res) => {
 // API Routes
 app.use('/api/parking', require('./routes/parking'));
 app.use('/api/reservations', require('./routes/reservations'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/companies', require('./routes/companies'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -65,7 +69,7 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res, next) => {
   res.status(404).json({
     error: 'Route not found',
     path: req.originalUrl,
@@ -74,20 +78,13 @@ app.use('*', (req, res) => {
       'GET /api/parking',
       'GET /api/parking/search',
       'POST /api/parking',
-      'GET /api/parking/:id',
-      'PUT /api/parking/:id',
-      'PATCH /api/parking/:id',
-      'DELETE /api/parking/:id',
-      'GET /api/parking/:id/spots',
-      'PUT /api/parking/spots/:id/availability',
-      'PATCH /api/parking/spots/:id/availability',
       'POST /api/reservations',
       'GET /api/reservations',
-      'PUT /api/reservations/:id/cancel',
-      'PATCH /api/reservations/:id/cancel',
-      'PUT /api/reservations/:id/complete',
-      'PATCH /api/reservations/:id/complete',
-      'GET /api/reservations/code/:confirmationCode'
+      'POST /api/users',
+      'GET /api/users',
+      'POST /api/companies',
+      'GET /api/companies',
+      'GET /api/admin/metrics'
     ]
   });
 });
