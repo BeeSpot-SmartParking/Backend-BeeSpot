@@ -1,9 +1,23 @@
 const { pool } = require('../config/database');
 
+
+
+const express = require('express');
+
+const app =  express();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
+
+
 // Create a new user account (basic version, no password hashing or auth)
 const registerUser = async (req, res) => {
   try {
     const { username, email, phone, password = 'temp_password', isCompany = false } = req.body;
+
+    console.log(req.body);
 
     if (!username || !email) {
       return res.status(400).json({
@@ -16,6 +30,7 @@ const registerUser = async (req, res) => {
       `INSERT INTO users (username, email, password_hash, phone, is_company, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id, username, email, phone, is_company`,
       [username, email, password, phone, isCompany]
     );
+    console.log("hey");
 
     res.status(201).json({
       success: true,
