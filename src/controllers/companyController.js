@@ -6,7 +6,7 @@ const registerCompany = async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    const { companyName, email, password = null, phone, address, wilaya, commune } = req.body;
+    const { companyName, email, password = 'temp_password', phone, address, wilaya, commune } = req.body;
 
     if (!companyName || !email) {
       await client.query('ROLLBACK');
@@ -18,7 +18,7 @@ const registerCompany = async (req, res) => {
 
     // Step 1: Create a user account for the company (is_company = true)
     const userResult = await client.query(
-      `INSERT INTO users (username, email, password, phone, is_company, created_at) VALUES ($1, $2, $3, $4, true, NOW()) RETURNING id`,
+      `INSERT INTO users (username, email, password_hash, phone, is_company, created_at) VALUES ($1, $2, $3, $4, true, NOW()) RETURNING id`,
       [companyName, email, password, phone]
     );
     const userId = userResult.rows[0].id;

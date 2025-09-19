@@ -3,7 +3,7 @@ const { pool } = require('../config/database');
 // Create a new user account (basic version, no password hashing or auth)
 const registerUser = async (req, res) => {
   try {
-    const { username, email, phone, isCompany = false } = req.body;
+    const { username, email, phone, password = 'temp_password', isCompany = false } = req.body;
 
     if (!username || !email) {
       return res.status(400).json({
@@ -13,8 +13,8 @@ const registerUser = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO users (username, email, phone, is_company, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id, username, email, phone, is_company`,
-      [username, email, phone, isCompany]
+      `INSERT INTO users (username, email, password_hash, phone, is_company, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id, username, email, phone, is_company`,
+      [username, email, password, phone, isCompany]
     );
 
     res.status(201).json({

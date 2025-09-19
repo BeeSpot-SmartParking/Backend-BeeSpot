@@ -9,18 +9,18 @@ const getCompanyAnalytics = async (req, res) => {
     // Get total parking spots for the company
     const totalSpots = await pool.query('SELECT SUM(total_spots) FROM parking_locations WHERE company_id = $1', [companyId]);
     
-    // Get total reservations for the company's parking locations
+    // Fix: Change parking_id to parking_location_id
     const totalReservations = await pool.query(`
       SELECT COUNT(r.*) FROM reservations r
-      JOIN parking_locations p ON r.parking_id = p.id
+      JOIN parking_locations p ON r.parking_location_id = p.id
       WHERE p.company_id = $1
     `, [companyId]);
 
-    // Get reservation trends (e.g., daily count for the last 7 days)
+    // Fix: Change parking_id to parking_location_id
     const dailyReservations = await pool.query(`
       SELECT DATE(created_at) as date, COUNT(*) as count
       FROM reservations
-      JOIN parking_locations ON reservations.parking_id = parking_locations.id
+      JOIN parking_locations ON reservations.parking_location_id = parking_locations.id
       WHERE parking_locations.company_id = $1 AND created_at >= NOW() - INTERVAL '7 days'
       GROUP BY DATE(created_at)
       ORDER BY date ASC

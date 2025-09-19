@@ -53,6 +53,18 @@ app.get('/', (req, res) => {
   });
 });
 
+// Add this to app.js temporarily
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const { pool } = require('./config/database');
+    const result = await pool.query('SELECT NOW()');
+    res.json({ success: true, timestamp: result.rows[0].now });
+  } catch (error) {
+    console.error('Database connection error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // API Routes
 app.use('/api/parking', require('./routes/parking'));
 app.use('/api/reservations', require('./routes/reservations'));
