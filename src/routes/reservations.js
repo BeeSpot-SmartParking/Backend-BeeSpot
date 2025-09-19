@@ -7,7 +7,8 @@ const {
   createReservation,
   getReservationByCode,
   getAllReservations,
-  cancelReservation
+  cancelReservation,
+  completeReservation
 } = require('../controllers/reservationController');
 
 // Create new reservation
@@ -21,5 +22,10 @@ router.get('/code/:confirmationCode', getReservationByCode);
 
 // Cancel reservation
 router.put('/:id/cancel', cancelReservation);
+router.patch('/:id/cancel', cancelReservation);
+
+// NEW: Complete a reservation
+router.put('/:id/complete', completeReservation);
+router.patch('/:id/complete', completeReservation);
 
 module.exports = router;

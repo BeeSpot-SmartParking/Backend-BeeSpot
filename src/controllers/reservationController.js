@@ -1,4 +1,3 @@
-
 const { pool } = require('../config/database');
 
 // Generate simple confirmation code
@@ -14,7 +13,7 @@ const generateQRCode = (reservationId, confirmationCode) => {
 // Create new reservation (basic version)
 const createReservation = async (req, res) => {
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
 
@@ -87,7 +86,7 @@ const createReservation = async (req, res) => {
     const durationHours = Math.ceil(durationMs / (1000 * 60 * 60));
     const totalAmount = durationHours * parkingLocation.price_per_hour;
 
-    // For organized parking, try to assign specific spot
+    // For organized parking, try to assign a specific spot
     let assignedSpotId = parkingSpotId;
     if (parkingLocation.parking_type === 'organized' && !parkingSpotId) {
       const availableSpot = await client.query(`
@@ -130,15 +129,15 @@ const createReservation = async (req, res) => {
 
     // Update parking location availability
     await client.query(`
-      UPDATE parking_locations 
+      UPDATE parking_locations
       SET available_spots = available_spots - 1
       WHERE id = $1
     `, [parkingLocationId]);
 
-    // If specific spot assigned, mark it as unavailable
+    // If a specific spot was assigned, mark it as unavailable
     if (assignedSpotId) {
       await client.query(`
-        UPDATE parking_spots 
+        UPDATE parking_spots
         SET is_available = false
         WHERE id = $1
       `, [assignedSpotId]);
@@ -309,14 +308,14 @@ const cancelReservation = async (req, res) => {
 
     // Update reservation status
     await client.query(`
-      UPDATE reservations 
+      UPDATE reservations
       SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
     `, [id]);
 
     // Restore parking location availability
     await client.query(`
-      UPDATE parking_locations 
+      UPDATE parking_locations
       SET available_spots = available_spots + 1
       WHERE id = $1
     `, [reservation.parking_location_id]);
@@ -324,7 +323,7 @@ const cancelReservation = async (req, res) => {
     // If specific spot was assigned, mark it as available
     if (reservation.parking_spot_id) {
       await client.query(`
-        UPDATE parking_spots 
+        UPDATE parking_spots
         SET is_available = true
         WHERE id = $1
       `, [reservation.parking_spot_id]);
@@ -350,9 +349,87 @@ const cancelReservation = async (req, res) => {
   }
 };
 
+// NEW: Complete a reservation
+const completeReservation = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const { id } = req.params;
+
+    // Get reservation details and lock the row for the transaction
+    const reservationResult = await client.query(`
+      SELECT r.*, pl.available_spots, pl.total_spots
+      FROM reservations r
+      JOIN parking_locations pl ON r.parking_location_id = pl.id
+      WHERE r.id = $1 FOR UPDATE
+    `, [id]);
+
+    if (reservationResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        error: 'Reservation not found'
+      });
+    }
+
+    const reservation = reservationResult.rows[0];
+
+    // Ensure the reservation is not already cancelled or completed
+    if (reservation.status === 'cancelled' || reservation.status === 'completed') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        error: `Reservation has already been ${reservation.status}`
+      });
+    }
+
+    // Update reservation status
+    await client.query(`
+      UPDATE reservations
+      SET status = 'completed', updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+    `, [id]);
+
+    // Check if the spot was assigned and free it up
+    if (reservation.parking_spot_id) {
+      await client.query(`
+        UPDATE parking_spots
+        SET is_available = true
+        WHERE id = $1
+      `, [reservation.parking_spot_id]);
+    }
+
+    // Since a spot was 'consumed' by the reservation, we should not increment available spots here.
+    // The availability should be handled at the beginning of the reservation and when it is cancelled.
+    // Completing the reservation just marks the end of the booking period.
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: 'Reservation completed successfully',
+      reservationId: id,
+      newStatus: 'completed'
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Complete reservation error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to complete reservation'
+    });
+  } finally {
+    client.release();
+  }
+};
+
+
 module.exports = {
   createReservation,
   getReservationByCode,
   getAllReservations,
-  cancelReservation
+  cancelReservation,
+  completeReservation
 };

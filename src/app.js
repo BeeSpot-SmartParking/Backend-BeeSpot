@@ -74,8 +74,20 @@ app.use('*', (req, res) => {
       'GET /api/parking',
       'GET /api/parking/search',
       'POST /api/parking',
+      'GET /api/parking/:id',
+      'PUT /api/parking/:id',
+      'PATCH /api/parking/:id',
+      'DELETE /api/parking/:id',
+      'GET /api/parking/:id/spots',
+      'PUT /api/parking/spots/:id/availability',
+      'PATCH /api/parking/spots/:id/availability',
       'POST /api/reservations',
-      'GET /api/reservations'
+      'GET /api/reservations',
+      'PUT /api/reservations/:id/cancel',
+      'PATCH /api/reservations/:id/cancel',
+      'PUT /api/reservations/:id/complete',
+      'PATCH /api/reservations/:id/complete',
+      'GET /api/reservations/code/:confirmationCode'
     ]
   });
 });
