@@ -18,7 +18,7 @@ const {
 } = require('../controllers/parkingController');
 
 // Get all parking locations
-router.get('/', getAllParkingLocations);
+router.get('/', getAllParkingLocations); 
 
 // Search parking locations by coordinates
 router.get('/search', searchParking);

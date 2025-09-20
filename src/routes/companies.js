@@ -16,3 +16,7 @@ router.get('/:id', getCompanyById);
 router.get('/:companyId/parking-locations', getCompanyParkingLocations);
 
 module.exports = router;
+
+
+//working correctly
+

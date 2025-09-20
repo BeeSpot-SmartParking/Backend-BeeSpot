@@ -11,6 +11,7 @@ const getAllParkingLocations = async (req, res) => {
       WHERE is_active = true
       ORDER BY name
     `);
+    console.log("hello");
 
     res.json({
       success: true,

@@ -1,4 +1,4 @@
-// src/routes/reservations.js - Basic reservation routes (no authentication)
+
 
 const express = require('express');
 const router = express.Router();
@@ -13,12 +13,15 @@ const {
 
 // Create new reservation
 router.post('/', createReservation);
+//working correctly
 
 // Get all reservations (with optional filters)
 router.get('/', getAllReservations);
+//working correctly
 
 // Get specific reservation by confirmation code
 router.get('/code/:confirmationCode', getReservationByCode);
+//working 
 
 // Cancel reservation
 router.put('/:id/cancel', cancelReservation);

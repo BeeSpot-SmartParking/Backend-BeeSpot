@@ -40,7 +40,7 @@ app.get('/api/health', (req, res) => {
 // Basic welcome endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Welcome to Smart Parking Algeria API',
+    message: 'Welcome to BeeSpot API',
     version: '1.0.0',
     endpoints: {
       parking: '/api/parking',

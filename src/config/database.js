@@ -1,32 +1,25 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-const DATABASE_URL = process.env.DATABASE_URL;
+const DATABASE_URL = process.env.DATABASE_URL || process.env.DB_CONNECTION_STRING;
 
 if (!DATABASE_URL) {
-  console.error('Error: DATABASE_URL environment variable is not set.');
+  console.error('Error: DATABASE_URL or DB_CONNECTION_STRING environment variable is not set.');
   process.exit(1);
 }
 
 const pool = new Pool({
   connectionString: DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false,
-    require: true
+    rejectUnauthorized: false
   },
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000, // Increased timeout
-  statement_timeout: 10000,
-  query_timeout: 10000,
-  retry: {
-    match: [
-      /connection timeout/,
-      /Connection terminated/,
-      /Connection terminated unexpectedly/
-    ],
-    max: 3
-  }
+  max: 10,                    // Reduced max connections
+  idleTimeoutMillis: 10000,   // Reduced idle timeout
+  connectionTimeoutMillis: 10000, // Increased connection timeout
+  statement_timeout: 30000,   // Increased statement timeout
+  query_timeout: 30000,       // Increased query timeout
+  keepAlive: true,           // Keep connections alive
+  keepAliveInitialDelayMillis: 10000
 });
 
 // Improved connection testing with retries
@@ -55,7 +48,7 @@ pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
 });
 
-pool.on('connect', () => {
+pool.on('connect', (client) => {
   console.log('New client connected to the pool');
 });
 

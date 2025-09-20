@@ -12,3 +12,6 @@ router.post('/', registerUser);
 router.get('/email/:email', getUserByEmail);
 
 module.exports = router;
+
+
+//all routes are working correctly

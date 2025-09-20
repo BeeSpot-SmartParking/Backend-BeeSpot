@@ -186,6 +186,8 @@ const createReservation = async (req, res) => {
 const getReservationByCode = async (req, res) => {
   try {
     const { confirmationCode } = req.params;
+    
+    console.log('Searching for confirmation code:', confirmationCode);
 
     const result = await pool.query(`
       SELECT r.*, pl.name as parking_name, pl.address, pl.wilaya,
@@ -195,6 +197,8 @@ const getReservationByCode = async (req, res) => {
       LEFT JOIN parking_spots ps ON r.parking_spot_id = ps.id
       WHERE r.confirmation_code = $1
     `, [confirmationCode]);
+
+    console.log('Query result:', result.rows);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
@@ -210,9 +214,12 @@ const getReservationByCode = async (req, res) => {
 
   } catch (error) {
     console.error('Get reservation by code error:', error);
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch reservation'
+      error: 'Failed to fetch reservation',
+      details: error.message // Add for debugging
     });
   }
 };
@@ -353,6 +360,7 @@ const cancelReservation = async (req, res) => {
 // NEW: Complete a reservation
 const completeReservation = async (req, res) => {
   const client = await pool.connect();
+  console.log("hey");
   try {
     await client.query('BEGIN');
 
@@ -365,6 +373,7 @@ const completeReservation = async (req, res) => {
       JOIN parking_locations pl ON r.parking_location_id = pl.id
       WHERE r.id = $1 FOR UPDATE
     `, [id]);
+
 
     if (reservationResult.rows.length === 0) {
       await client.query('ROLLBACK');

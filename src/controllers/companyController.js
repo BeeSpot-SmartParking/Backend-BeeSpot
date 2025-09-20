@@ -2,7 +2,20 @@ const { pool } = require('../config/database');
 
 // Register a new company account (basic version)
 const registerCompany = async (req, res) => {
-  const client = await pool.connect();
+  console.log("hi");
+  let client
+  try {
+    client = await pool.connect()
+    console.log('helloo there ')
+  } catch (connectError) {
+    console.error('Pool connection failed:', connectError.message)
+    return res.status(500).json({
+      success: false,
+      error: 'Database connection failed',
+      details: connectError.message,
+    })
+  }
+  console.log("helloo there ");
   try {
     await client.query('BEGIN');
 
@@ -18,7 +31,7 @@ const registerCompany = async (req, res) => {
 
     // Step 1: Create a user account for the company (is_company = true)
     const userResult = await client.query(
-      `INSERT INTO users (username, email, password_hash, phone, is_company, created_at) VALUES ($1, $2, $3, $4, true, NOW()) RETURNING id`,
+      `INSERT INTO users (username, email, password, phone, is_company, created_at) VALUES ($1, $2, $3, $4, true, NOW()) RETURNING id`,
       [companyName, email, password, phone]
     );
     const userId = userResult.rows[0].id;

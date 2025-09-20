@@ -2,22 +2,32 @@ const { pool } = require('../config/database');
 require('dotenv').config();
 
 // Step 1: Initiate payment
+
 const initiatePayment = async (req, res) => {
+  console.log("Initiate payment called");
+  console.log("Request body:", req.body);
   const { reservation_id } = req.body;
 
   try {
     // 1. Get reservation info from DB
-    const [rows] = await pool.query(
-      'SELECT r.id, r.hours, p.price_per_hour FROM reservations r JOIN parkings p ON r.parkingLocationId = p.id WHERE r.id = ?',
+    const result = await pool.query(
+      'SELECT r.id, r.reservation_start, r.reservation_end, p.price_per_hour FROM reservations r JOIN parking_locations p ON r.parking_location_id = p.id WHERE r.id = $1',
       [reservation_id]
     );
 
-    if (rows.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Reservation not found' });
     }
 
-    const reservation = rows[0];
-    const amount = reservation.hours * reservation.price_per_hour;
+    const reservation = result.rows[0];
+
+    // Calculate hours from start/end times
+    const startTime = new Date(reservation.reservation_start);
+    const endTime = new Date(reservation.reservation_end);
+    const durationMs = endTime - startTime;
+    const hours = Math.ceil(durationMs / (1000 * 60 * 60)); 
+
+    const amount = hours * reservation.price_per_hour;
 
     // 2. Call Guiddini initiate API
     const response = await fetch('https://epay.guiddini.dz/api/payment/initiate', {
@@ -33,7 +43,8 @@ const initiatePayment = async (req, res) => {
         language: 'fr'
       })
     });
-
+    console.log("Guiddini response status:", response.status);
+    console.log("response.data:", response.data);
     const data = await response.json();
 
     if (!data.data || !data.data.attributes.form_url) {

@@ -12,3 +12,6 @@ router.get('/sensor-data/parking/:parkingId', getParkingSensorData);
 router.get('/metrics', getDashboardMetrics);
 
 module.exports = router;
+
+
+//all routes are working correctly 

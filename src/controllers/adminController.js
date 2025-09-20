@@ -5,18 +5,27 @@ const { pool } = require('../config/database');
 
 const getCompanyAnalytics = async (req, res) => {
   const { companyId } = req.params;
+  console.log('Fetching analytics for company ID:', companyId); 
+  
   try {
-    // Get total parking spots for the company
+    console.log('Step 1: Getting total spots...');
     const totalSpots = await pool.query('SELECT SUM(total_spots) FROM parking_locations WHERE company_id = $1', [companyId]);
+    console.log('Total spots result:', totalSpots.rows);
     
-    // Fix: Change parking_id to parking_location_id
+    if (totalSpots.rows.length === 0 || totalSpots.rows[0].sum === null) {
+      return res.status(404).json({ error: 'Company not found or has no parking locations' });
+    }
+    
+    console.log('Step 2: Getting total reservations...');
+    // Check if reservations table exists first
     const totalReservations = await pool.query(`
       SELECT COUNT(r.*) FROM reservations r
       JOIN parking_locations p ON r.parking_location_id = p.id
       WHERE p.company_id = $1
     `, [companyId]);
+    console.log('Total reservations result:', totalReservations.rows);
 
-    // Fix: Change parking_id to parking_location_id
+    console.log('Step 3: Getting daily reservations...');
     const dailyReservations = await pool.query(`
       SELECT DATE(created_at) as date, COUNT(*) as count
       FROM reservations
@@ -25,15 +34,22 @@ const getCompanyAnalytics = async (req, res) => {
       GROUP BY DATE(created_at)
       ORDER BY date ASC
     `, [companyId]);
+    console.log('Daily reservations result:', dailyReservations.rows);
 
     res.status(200).json({
       totalSpots: parseInt(totalSpots.rows[0].sum, 10) || 0,
       totalReservations: parseInt(totalReservations.rows[0].count, 10),
       dailyReservations: dailyReservations.rows,
     });
+    
   } catch (err) {
-    console.error('Error fetching company analytics:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Detailed error in getCompanyAnalytics:', err);
+    console.error('Error message:', err.message);
+    console.error('Error code:', err.code);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: err.message // Add this for debugging
+    });
   }
 };
 

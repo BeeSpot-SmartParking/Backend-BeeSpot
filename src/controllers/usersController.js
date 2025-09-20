@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 // Create a new user account (basic version, no password hashing or auth)
 const registerUser = async (req, res) => {
   try {
-    const { username, email, phone, password = 'temp_password', isCompany = false } = req.body;
+    const { username, email, phone, password = 'temp_password', isCompany = false , registration_number} = req.body;
 
     console.log(req.body);
 
@@ -26,10 +26,15 @@ const registerUser = async (req, res) => {
       });
     }
 
+    // const result = await pool.query(
+    //   `INSERT INTO users (username, email, password_hash, phone, is_company, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id, username, email, phone, is_company`,
+    //   [username, email, password, phone, isCompany]
+    // );
     const result = await pool.query(
-      `INSERT INTO users (username, email, password_hash, phone, is_company, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id, username, email, phone, is_company`,
-      [username, email, password, phone, isCompany]
-    );
+      `INSERT INTO users (username, email, phone,password , is_company, registration_number) VALUES ($1, $2, $3, $4, $5 ,$6) RETURNING id, username, email, phone, is_company`,
+      [username, email, phone,  password, isCompany, registration_number]
+    )
+
     console.log("hey");
 
     res.status(201).json({
@@ -57,6 +62,7 @@ const registerUser = async (req, res) => {
 const getUserByEmail = async (req, res) => {
   try {
     const { email } = req.params;
+    console.log(email);
 
     const result = await pool.query(
       `SELECT id, username, email, phone, is_company, created_at FROM users WHERE email = $1`,
