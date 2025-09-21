@@ -75,3 +75,7 @@ The system will give attention to accuracy in difficult lighting, partial occlus
 import cv2
 cap = cv2.VideoCapture("rtsp://<camera-url>")  # or 0 for local camera
 ret, frame = cap.read()
+
+
+
+not fixed yet
